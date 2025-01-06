@@ -1,0 +1,139 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-10-08 09:17+0330\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: config/settings/base.py:42
+msgid "English"
+msgstr "انگلیسی"
+
+#: config/settings/base.py:43
+msgid "Farsi"
+msgstr "فارسی"
+
+#: events/models.py:22
+msgid "Pending"
+msgstr "در انتظار"
+
+#: events/models.py:22
+msgid "Sent"
+msgstr "ارسال‌شده"
+
+#: events/models.py:22
+msgid "Processed"
+msgstr "انجام‌شده"
+
+#: tickets/models.py:29
+msgid "Technical Dept."
+msgstr "فنی"
+
+#: tickets/models.py:29
+msgid "Sale Dept."
+msgstr "فروش"
+
+#: tickets/models.py:36
+msgid "Urgent"
+msgstr "اضطراری"
+
+#: tickets/models.py:37
+msgid "High"
+msgstr "بالا"
+
+#: tickets/models.py:38
+msgid "Moderate"
+msgstr "متوسط"
+
+#: tickets/models.py:39
+msgid "Low"
+msgstr "پایین"
+
+#: tickets/models.py:54
+msgid "Open"
+msgstr "باز"
+
+#: tickets/models.py:54
+msgid "Closed"
+msgstr "بسته"
+
+#: tickets/serializers.py:24
+#, python-brace-format
+msgid "Document file size must be less than {size} MB."
+msgstr "سایز فایل مدرک باید کمتر از {size} مگابایت باشد"
+
+#: tickets/serializers.py:30
+msgid "Documents must be either a picture or PDF."
+msgstr "مدارک باید از نوع عکس یا PDF باشند"
+
+#: tickets/views.py:89
+msgid "This url param is required."
+msgstr "این پارامتر در آدرس درخواست الزامی است"
+
+#: tickets/views.py:124
+msgid "Nobody was assigned"
+msgstr ""
+
+#: tickets/views.py:144 tickets/views.py:170
+msgid "Ticket closed."
+msgstr "تیکت بسته شد"
+
+#: tickets/views.py:201
+msgid "File not found. It may have been deleted"
+msgstr "فایل موردنظر پیادا نشد. ممکن است حذف شده باشد"
+
+#: users/auth.py:40
+msgid "Token contained no recognizable user identification"
+msgstr ""
+
+#: users/auth.py:57
+msgid "User is inactive"
+msgstr "کاربر غیرفعال است"
+
+#: users/auth.py:64
+msgid "The user's password has been changed."
+msgstr "رمز عبور کاربر تغییر کرده است"
+
+#: users/models.py:9
+msgid "View customers"
+msgstr "مشاهده مشتریان"
+
+#: users/models.py:10
+msgid "Add or change customers"
+msgstr "ایجاد یا ویرایش مشتریان"
+
+#: users/models.py:11
+msgid "View admins"
+msgstr "مشاهده "
+
+#: users/models.py:12
+msgid "Add or change admins"
+msgstr ""
+
+#: users/models.py:13
+msgid "Accountable for tickets"
+msgstr ""
+
+#: users/models.py:71
+msgid "Email"
+msgstr ""
+
+#: users/models.py:73
+msgid "Email Verified"
+msgstr "ایمیل‌تایید‌شده"
+
+#: users/models.py:76
+msgid "Identity Verified"
+msgstr "احرازهویت‌شده"

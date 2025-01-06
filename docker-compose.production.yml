@@ -1,0 +1,99 @@
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+  production_django_media: {}
+  production_redis_data: {}
+
+networks:
+  proxy-net:
+    external: true
+  broker-net:
+    external: true
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    image: ticketingapi_production_django
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - production_django_media:/app/media
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+    command: /start
+    networks:
+      - default
+      - proxy-net
+      - broker-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy-net
+      - traefik.http.routers.ticketingapi.entrypoints=websecure
+      - traefik.http.routers.ticketingapi.rule=(Host(`api.panel.darvagcloud.com`) || Host(`api.admin.panel.darvagcloud.com`)) && PathRegexp(`^/((en|fa)/)?tickets`)
+      - traefik.http.routers.ticketingapi.tls=true
+      - traefik.http.services.ticketingapi.loadbalancer.server.port=5000
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: ticketingapi_production_postgres
+    restart: always
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.production/.postgres
+
+  redis:
+    image: docker.io/redis:7.2.5
+    restart: always
+    volumes:
+      - production_redis_data:/data
+
+  celeryworker:
+    <<: *django
+    image: ticketingapi_production_celeryworker
+    command: /start-celeryworker
+    networks:
+      - default
+      - broker-net
+    labels:
+      - traefik.enable=false
+
+  celerybeat:
+    <<: *django
+    image: ticketingapi_production_celerybeat
+    command: /start-celerybeat
+    networks:
+      - default
+      - broker-net
+    labels:
+      - traefik.enable=false
+
+  consumer:
+    <<: *django
+    image: ticketingapi_production_consumer
+    command: python manage.py consumer
+    labels:
+      - traefik.enable=false
+
+  flower:
+    <<: *django
+    image: ticketingapi_production_flower
+    command: /start-flower
+    networks:
+      - default
+      - proxy-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy-net
+      - traefik.http.routers.ticketingapi-flower.entrypoints=websecure
+      - traefik.http.routers.ticketingapi-flower.rule=Host(`ticketingapi-flower.panel.darvagcloud.com`)
+      - traefik.http.routers.ticketingapi-flower.tls=true
+      - traefik.http.services.ticketingapi-flower.loadbalancer.server.port=5555

@@ -1,0 +1,11 @@
+from django.core.files.base import ContentFile
+
+
+def uploaded_image_file(name=None):
+    content = (
+        b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04"
+        b"\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02"
+        b"\x02\x4c\x01\x00\x3b"
+    )
+    name = name or "test.jpg"
+    return ContentFile(content, name=name)

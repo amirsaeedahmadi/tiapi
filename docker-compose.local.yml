@@ -1,0 +1,115 @@
+volumes:
+  ticketingapi_local_postgres_data: {}
+  ticketingapi_local_postgres_data_backups: {}
+  ticketingapi_local_redis_data: {}
+
+networks:
+  proxy-net:
+    external: true
+  broker-net:
+    external: true
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: ticketingapi_local_django
+    container_name: ticketingapi_local_django
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    command: /start
+    networks:
+      - default
+      - proxy-net
+      - broker-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy-net
+      - traefik.http.routers.ticketingapi.entrypoints=websecure
+      - traefik.http.routers.ticketingapi.rule=(Host(`api.darvag.dev`) || Host(`api.admin.darvag.dev`)) && PathRegexp(`^/((en|fa)/)?tickets`)
+      - traefik.http.routers.ticketingapi.tls=true
+      - traefik.http.services.ticketingapi.loadbalancer.server.port=8000
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: ticketingapi_production_postgres
+    container_name: ticketingapi_local_postgres
+    restart: always
+    volumes:
+      - ticketingapi_local_postgres_data:/var/lib/postgresql/data
+      - ticketingapi_local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+
+  redis:
+    image: docker.io/redis:7.2.5
+    container_name: ticketingapi_local_redis
+    restart: always
+    volumes:
+      - ticketingapi_local_redis_data:/data
+
+  celeryworker:
+    <<: *django
+    image: ticketingapi_local_celeryworker
+    container_name: ticketingapi_local_celeryworker
+    ports: []
+    command: /start-celeryworker
+    networks:
+      - default
+      - broker-net
+    labels:
+      - traefik.enable=false
+
+  celerybeat:
+    <<: *django
+    image: ticketingapi_local_celerybeat
+    container_name: ticketingapi_local_celerybeat
+    ports: []
+    command: /start-celerybeat
+    networks:
+      - default
+      - broker-net
+    labels:
+      - traefik.enable=false
+
+  consumer:
+    <<: *django
+    image: ticketingapi_local_consumer
+    container_name: ticketingapi_local_consumer
+    command: python manage.py consumer
+    labels:
+      - traefik.enable=false
+
+#  ticketassigner:
+#    <<: *django
+#    image: ticketingapi_local_ticketassigner
+#    container_name: ticketingapi_local_ticketassigner
+#    command: python manage.py ticketassigner 10
+#    labels:
+#      - traefik.enable=false
+
+  flower:
+    <<: *django
+    image: ticketingapi_local_flower
+    container_name: ticketingapi_local_flower
+    command: /start-flower
+    networks:
+      - default
+      - proxy-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy-net
+      - traefik.http.routers.ticketingapi-flower.entrypoints=websecure
+      - traefik.http.routers.ticketingapi-flower.rule=Host(`ticketingapi-flower.darvag.dev`)
+      - traefik.http.routers.ticketingapi-flower.tls=true
+      - traefik.http.services.ticketingapi-flower.loadbalancer.server.port=5555
