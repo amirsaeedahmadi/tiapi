@@ -127,7 +127,7 @@ class FollowUpManager(models.Manager):
         user = kwargs.pop("user")
         ticket = kwargs.pop("ticket")
         with transaction.atomic():
-            instance = self.create(ticket_id=ticket, user_id=user, **kwargs)
+            instance = self.create(ticket_id=ticket["id"], user_id=user, **kwargs)
             instance.attachments.set(attachments)
             return instance
 

@@ -12,6 +12,7 @@ from tickets.models import FollowUp
 from tickets.models import Ticket
 from users.services import UserService
 from utils.kafka import create_consumer
+from utils.kafka import kafka_event_store
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -47,5 +48,10 @@ class Command(BaseCommand):
         bootstrap_servers = settings.KAFKA_URL
         logger.info("Connecting to Kafka...")
         # Create Kafka consumer
-        consumer = create_consumer(bootstrap_servers, "ticketingapi", self.TOPICS)
+        consumer = create_consumer(
+            bootstrap_servers,
+            "ticketingapi",
+            self.TOPICS,
+            dlq_producer=kafka_event_store.producer,
+        )
         consumer.start_consuming(on_message=self.on_message)

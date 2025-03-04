@@ -3,11 +3,13 @@ import logging
 import signal
 import time
 
+from django.conf import settings
 from django.utils import translation
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 
+from utils.exceptions import report_exception
 from utils.json import MessageEncoder
 
 logger = logging.getLogger(__name__)
@@ -45,18 +47,12 @@ class Producer:
         """
         Send a message to a Kafka topic.
         """
-        try:
-            # Asynchronous send with callback
-            future = self.producer.send(topic, key=message_key, value=message)
-            future.add_callback(self.on_send_success)
-            future.add_errback(self.on_send_error)
-        except KafkaError as e:
-            msg = f"Failed to send message: {e}"
-            logger.exception(msg)
-            raise
-            # Optionally implement retry logic here
-        else:
-            return future
+        # Asynchronous send with callback
+        future = self.producer.send(topic, key=message_key, value=message)
+        future.add_callback(self.on_send_success)
+        future.add_errback(self.on_send_error)
+        future.get(timeout=5)
+        return future
 
 
 def create_producer(bootstrap_servers):
@@ -82,8 +78,9 @@ def create_producer(bootstrap_servers):
 class Consumer:
     RUNNING = True
 
-    def __init__(self, *topics, **configs):
+    def __init__(self, *topics, dlq_producer: Producer = None, **configs):
         self.consumer = KafkaConsumer(*topics, **configs)
+        self.dlq_producer = dlq_producer
 
     def handle_shutdown_signal(self, signum, frame):
         """
@@ -126,9 +123,11 @@ class Consumer:
                                 except Exception as e:
                                     msg = f"Failed to process message: {e}"
                                     logger.exception(msg)
-                                    raise
-                                    # TODO: We should not raise. We have to move to DLQ
-                                    # Optionally, log the offset or take further action
+                                    if self.dlq_producer:
+                                        try:
+                                            self.dlq_producer.send("DLQ", message.value)
+                                        except KafkaError as e:
+                                            report_exception()
 
                         # Commit offsets after processing the batch
                         self.commit_offsets()
@@ -145,7 +144,7 @@ class Consumer:
             self.consumer.close()
 
 
-def create_consumer(bootstrap_servers, group_id, topics=None):
+def create_consumer(bootstrap_servers, group_id, topics, dlq_producer=None):
     """
     Create and configure a Kafka consumer.
     """
@@ -165,6 +164,7 @@ def create_consumer(bootstrap_servers, group_id, topics=None):
         session_timeout_ms=30000,  # Consumer session timeout
         # Heartbeat to the broker to avoid session timeout
         heartbeat_interval_ms=10000,
+        dlq_producer=dlq_producer,
     )
 
 
@@ -181,3 +181,7 @@ class KafkaEventStore:
             "locale": translation.get_language(),
         }
         return self.producer.send(event.topic, body, message_key=event.key)
+
+
+servers = settings.KAFKA_URL
+kafka_event_store = KafkaEventStore(bootstrap_servers=servers)

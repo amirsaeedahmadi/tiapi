@@ -111,6 +111,8 @@ class AccountableSerializer(serializers.ModelSerializer):
 
 
 class ReadOnlyFollowUpSerializer(serializers.ModelSerializer):
+    ticket = ReadOnlyTicketSerializer(read_only=True)
+
     class Meta:
         model = FollowUp
         fields = "__all__"

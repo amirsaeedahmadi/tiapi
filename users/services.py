@@ -2,7 +2,6 @@ import json
 import logging
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
 
 from .serializers import WritableUserSerializer
 
@@ -18,11 +17,7 @@ class UserService:
             msg = f"User cannot be created: {json.dumps(serializer.errors)}"
             logger.warning(msg)
             return
-        try:
-            User.objects.create(**serializer.validated_data)
-        except IntegrityError as e:
-            msg = f"IntegrityError: {kwargs['email']} - {e!s}"
-            logger.warning(msg)
+        User.objects.create(**serializer.validated_data)
 
     @staticmethod
     def on_user_updated(**kwargs):

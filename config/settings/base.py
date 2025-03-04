@@ -255,8 +255,18 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        "kafka": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "kafka.log",
+            "maxBytes": 30 * 1024 * 1024,
+            "formatter": "verbose",
+        },
     },
     "root": {"level": "INFO", "handlers": ["console"]},
+    "loggers": {
+        "kafka": {"level": "INFO", "handlers": ["kafka"], "propagate": False},
+    },
 }
 
 # Kafka
@@ -384,3 +394,9 @@ SWAGGER_SETTINGS = {
 
 # File Sizes in MB
 MAX_ATTACHMENT_SIZE = env.int("MAX_ATTACHMENT_SIZE", 1)
+
+
+JIRA_URL = env.str("JIRA_URL", default="https://192.168.7.19/rest/api/2")
+JIRA_USERNAME = env.str("JIRA_USERNAME", default="a.ahmadi")
+JIRA_PASSWORD = env.str("JIRA_PASSWORD", default="")  # Don't hardcode passwords in settings
+JIRA_VERIFY_SSL = env.bool("JIRA_VERIFY_SSL", default=False)

@@ -33,10 +33,11 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy-net
-      - traefik.http.routers.ticketingapi.entrypoints=websecure
+      - traefik.http.routers.ticketingapi.entrypoints=web
       - traefik.http.routers.ticketingapi.rule=(Host(`api.panel.darvagcloud.com`) || Host(`api.admin.panel.darvagcloud.com`)) && PathRegexp(`^/((en|fa)/)?tickets`)
-      - traefik.http.routers.ticketingapi.tls=true
       - traefik.http.services.ticketingapi.loadbalancer.server.port=5000
+      - traefik.http.middlewares.setHeaders.headers.customrequestheaders.X-Forwarded-Proto=https
+      - traefik.http.routers.ticketingapi.middlewares=setHeaders@docker
 
   postgres:
     build:

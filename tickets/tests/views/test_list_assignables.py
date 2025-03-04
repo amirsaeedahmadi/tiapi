@@ -46,7 +46,7 @@ class ListAssignablesTests(APITestCase):
         response = self.client.get(self.url, headers={"host": "api.admin.testserver"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_search_is_required(self):
+    def test_email_url_param_is_required(self):
         self.client.force_authenticate(self.staff)
         response = self.client.get(self.url, headers={"host": "api.admin.testserver"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -55,7 +55,7 @@ class ListAssignablesTests(APITestCase):
         self.client.force_authenticate(self.staff)
         response = self.client.get(
             self.url,
-            {"search": "use"},
+            {"assignable": "use"},
             headers={"host": "api.admin.testserver"},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)

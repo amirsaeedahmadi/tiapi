@@ -1,5 +1,6 @@
-import mimetypes
+from pathlib import Path
 
+import magic
 from django.contrib.auth import get_user_model
 from django.http.response import HttpResponse
 from django.utils.translation import gettext_lazy as _
@@ -38,7 +39,7 @@ class TicketViewSet(
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     filterset_fields = ("status", "accountable", "user", "cat", "priority")
-    search_fields = ("user__email",)
+    search_fields = ("ref_code", "user__email", "user__first_name", "user__last_name")
 
     def get_permission_classes(self):
         if self.action in ["assignables", "assign"]:
@@ -83,9 +84,9 @@ class TicketViewSet(
     def assignables(self, request, pk=None):
         instance = self.get_object()
         exclude_kwargs = {"pk": instance.accountable.pk} if instance.accountable else {}
-        search = request.GET.get("search")
+        search = request.GET.get("assignable")
         if not search:
-            raise ValidationError({"search": _("This url param is required.")})
+            raise ValidationError({"assignable": _("This url param is required.")})
         queryset = User.objects.get_assignable_admins(
             filter_kwargs={"email__contains": search}, exclude_kwargs=exclude_kwargs
         ).order_by("email")
@@ -193,9 +194,13 @@ class DownloadAttachmentView(APIView):
                     msg = _("No file was found for this user")
                     raise exceptions.NotFound(msg)
             try:
-                with open(obj.file.path, "rb") as file:  # noqa: PTH123
-                    content_type, encoding = mimetypes.guess_type(obj.file.path)
-                    return HttpResponse(file.read(), content_type=content_type)
+                with Path(obj.file.path).open("rb") as file:
+                    content_type = magic.from_buffer(file.read(2048), mime=True)
+                    response = HttpResponse(file, content_type=content_type)
+                    response["Content-Disposition"] = (
+                        f'attachment; filename="{obj.file.name.split("/")[-1]}"'
+                    )
+                    return response
             except FileNotFoundError as e:
                 msg = _("File not found. It may have been deleted")
                 raise exceptions.NotFound(msg) from e
