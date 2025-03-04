@@ -15,11 +15,6 @@ from tickets.serializers import ReadOnlyFollowUpSerializer
 from tickets.serializers import ReadOnlyTicketSerializer
 from utils.decorators import delay_return
 from utils.kafka import kafka_event_store
-from utils.jira import JiraClient
-from django.conf import settings
-
-
-logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -27,7 +22,6 @@ User = get_user_model()
 class TicketService:
     def __init__(self, event_store):
         self.event_store = event_store
-        self.jira_client = JiraClient() if settings.JIRA_ENABLED else None
 
     @staticmethod
     def serialize(instance):
@@ -91,28 +85,6 @@ class TicketService:
         event = FollowUpCreated(data)
         self.event_store.add_event(event)
         return instance
-    
-    def create_jira_issue(self, ticket):
-        if not self.jira_client or not settings.JIRA_ENABLED:
-            return None
-            
-        try:
-            response = self.jira_client.create_issue(
-                project_key="DRVG",
-                summary=ticket.subject,
-                description=ticket.description,
-                issue_type_id="10100"
-            )
-            
-            if response and 'key' in response:
-                # You might want to store the Jira key with the ticket
-                # This would require adding a jira_key field to the Ticket model
-                return response
-                
-        except Exception as e:
-            logger.error(f"Failed to create Jira issue for ticket {ticket.id}: {str(e)}")
-            
-        return None
 
 
 ticket_service = TicketService(kafka_event_store)
