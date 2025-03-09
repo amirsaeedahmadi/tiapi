@@ -396,7 +396,27 @@ SWAGGER_SETTINGS = {
 MAX_ATTACHMENT_SIZE = env.int("MAX_ATTACHMENT_SIZE", 1)
 
 
-JIRA_URL = env.str("JIRA_URL", default="https://192.168.7.19/rest/api/2")
-JIRA_USERNAME = env.str("JIRA_USERNAME", default="a.ahmadi")
-JIRA_PASSWORD = env.str("JIRA_PASSWORD", default="")  # Don't hardcode passwords in settings
-JIRA_VERIFY_SSL = env.bool("JIRA_VERIFY_SSL", default=False)
+# JIRA_URL = env.str("JIRA_URL", default="https://192.168.7.19/rest/api/2")
+# JIRA_USERNAME = env.str("JIRA_USERNAME", default="a.ahmadi")
+# JIRA_PASSWORD = env.str("JIRA_PASSWORD", default="")  # Don't hardcode passwords in settings
+# JIRA_VERIFY_SSL = env.bool("JIRA_VERIFY_SSL", default=False)
+
+# JIRA_ENABLED = env.bool("JIRA_ENABLED", default=False)
+# if JIRA_ENABLED:
+#     JIRA_CONFIG = {
+#         'SERVER': env("JIRA_SERVER_URL"),
+#         'USERNAME': env("JIRA_USERNAME"),
+#         'PASSWORD': env("JIRA_PASSWORD"),
+#         'PROJECT_KEY': env("JIRA_PROJECT_KEY"),
+#     }
+
+JIRA_ENABLED = env.bool("JIRA_ENABLED", default=False)
+if JIRA_ENABLED:
+    JIRA_CONFIG = {
+        'SERVER': env("JIRA_SERVER_URL", default="https://192.168.7.19"),
+        'USERNAME': env("JIRA_ADMIN_USERNAME", default="admin"),
+        'PASSWORD': env("JIRA_ADMIN_PASSWORD"),
+        'PROJECT_KEY': env("JIRA_PROJECT_KEY", default="TPP"),
+        'VERIFY_SSL': env.bool("JIRA_VERIFY_SSL", default=False),  
+        'API_VERSION': 'rest/api/2', 
+    }
