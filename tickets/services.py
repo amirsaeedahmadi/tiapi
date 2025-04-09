@@ -15,7 +15,7 @@ from tickets.serializers import ReadOnlyFollowUpSerializer
 from tickets.serializers import ReadOnlyTicketSerializer
 from utils.decorators import delay_return
 from utils.kafka import kafka_event_store
-from jira.services import JiraService
+from utils.jira import JiraService
 from django.conf import settings
 
 User = get_user_model()

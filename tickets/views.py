@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 from users.permissions import IsAdminHost
 from users.serializers import SearchAdminUserSerializer
 from utils.tokens import generate_integer_code
+from utils.jira import JiraService
 
 from .models import Attachment
 from .models import Ticket
@@ -27,7 +28,6 @@ from .serializers import AttachmentSerializer
 from .serializers import FollowUpSerializer
 from .serializers import TicketSerializer
 from .services import ticket_service
-from .services import jira_service
 
 User = get_user_model()
 
@@ -63,7 +63,7 @@ class TicketViewSet(
         if not cat:
             raise ValidationError({"detail": _("Cat is required")})
         if cat == Ticket.TECHNICAL:
-            # TODO: check this 
+            jira_service = JiraService()
             queryset = jira_service.list_tickets(user_id=request.user.pk)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)

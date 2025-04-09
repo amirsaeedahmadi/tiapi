@@ -1,5 +1,5 @@
 import logging
-from .services import JiraService
+from utils.jira import JiraService
 
 from utils.kafka import KafkaEventStore
 from django.conf import settings
@@ -10,4 +10,4 @@ bootstrap_servers = settings.KAFKA_URL
 kafka_event_store = KafkaEventStore(bootstrap_servers=bootstrap_servers)
 
 
-jira_service = JiraService(kafka_event_store)
+# jira_service = JiraService(kafka_event_store)

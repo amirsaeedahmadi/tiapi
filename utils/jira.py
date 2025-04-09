@@ -8,14 +8,14 @@ import json
 import uuid
 from tickets.models import Ticket
 
-from jira.serializers.ticket_serializer import (
+from tickets.serializers import (
     JiraIssueSerializer,
     JiraIssueTypeSerializer,
     JiraIssueCommentSerializer,
     JiraIssueProjectSerializer,
     JiraIssuePrioritySerializer,
 )
-from jira.events import JiraTicketCommentCreated
+from tickets.events import JiraTicketCommentCreated
 
 
 class JiraService:
@@ -100,19 +100,36 @@ class JiraService:
         return add_attachment_response.json()
 
     def list_tickets(self, user_id):
-        jira_search_url = (f"{settings.JIRA_BASE_URL}/rest/api/2/search/?customer_id="
-                           f"{user_id}")
-        response = requests.get(
-            jira_search_url, auth=self.auth, timeout=15, verify=False
+        jira_search_url = f"{settings.JIRA_BASE_URL}/rest/api/2/search"
+        payload = {
+            "jql": f"customer_id ~ {user_id}",
+            "startAt": 0,
+            "maxResults": 2,
+            "fields": [
+                "id",
+                "key",
+                "self",
+                "description",
+                "customfield_10200",
+                "customfield_10201"
+            ]
+        }
+        response = requests.post(
+            jira_search_url,
+            json=payload,
+            auth=self.auth,
+            timeout=15,
+            verify=False,
+            headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
         data = response.json()
         tickets = []
-        for item in data:
+        # The Jira search API returns issues in the "issues" key.
+        for item in data.get("issues", []):
             ticket = Ticket(id=item["id"])
             tickets.append(ticket)
         return tickets
-
 
     def fetch_tickets(self, jql_filters=""):
         jira_search_url = f"{settings.JIRA_BASE_URL}/rest/api/2/search/?{jql_filters}"

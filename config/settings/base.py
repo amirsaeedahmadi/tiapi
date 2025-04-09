@@ -415,7 +415,7 @@ if JIRA_ENABLED:
     JIRA_CONFIG = {
         'SERVER': env("JIRA_SERVER_URL", default="https://192.168.7.19"),
         'USERNAME': env("JIRA_ADMIN_USERNAME", default="admin"),
-        'PASSWORD': env("JIRA_ADMIN_PASSWORD"),
+        'PASSWORD': env("JIRA_ADMIN_PASSWORD", default="Darvag@123"),
         'PROJECT_KEY': env("JIRA_PROJECT_KEY", default="TPP"),
         'VERIFY_SSL': env.bool("JIRA_VERIFY_SSL", default=False),  
         'API_VERSION': 'rest/api/2', 
