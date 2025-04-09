@@ -1,11 +1,10 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from .views import DownloadAttachmentView
-from .views import TicketViewSet
+from .views import DownloadAttachmentView, TicketViewSet
+from jira.views import JiraTicketUpdateHook  # 👈 Import from jira app
 
 router = SimpleRouter()
-
 router.register(r"", TicketViewSet)
 
 urlpatterns = [
@@ -13,6 +12,11 @@ urlpatterns = [
         "attachments/<pk>/download/",
         DownloadAttachmentView.as_view(),
         name="attachment-download",
+    ),
+    path(
+        "tickets/comment_creation_webhook",
+        JiraTicketUpdateHook.as_view({"post": "comment_created"}),
+        name="comment_creation_webhook",
     ),
 ]
 

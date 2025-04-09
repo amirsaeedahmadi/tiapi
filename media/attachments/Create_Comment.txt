@@ -1,0 +1,18 @@
+Create Comment with Visibility:
+
+
+curl -k \
+   -u panel:Sa2x500mfyjY7oOh \
+   -X POST \
+   -H "Content-Type: application/json" \
+   --data '{
+       "body": "This is a comment that only administrators can see.",
+       "visibility": {
+           "type": "role",
+           "value": "کارشناس پشتیبانی فنی لایه 1"
+       }
+   }' \
+   https://192.168.7.19/rest/api/2/issue/TPP-12/comment
+
+
+

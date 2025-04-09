@@ -10,6 +10,7 @@ from tickets.events import TicketClosed
 from tickets.events import TicketCreated
 from tickets.models import FollowUp
 from tickets.models import Ticket
+from tickets.services import TicketService
 from users.services import UserService
 from utils.kafka import create_consumer
 from utils.kafka import kafka_event_store
@@ -27,7 +28,7 @@ class Command(BaseCommand):
         "UserCreated": lambda body: UserService.on_user_created(**body),
         "UserUpdated": lambda body: UserService.on_user_updated(**body),
         "UserDeleted": lambda body: User.objects.filter(pk=body["id"]).delete(),
-        TicketCreated.name: lambda body: Ticket.objects.create_ticket(**body),
+        TicketCreated.name: lambda body: TicketService.on_ticket_created(**body),
         TicketAssigned.name: lambda body: Ticket.objects.assign_ticket(
             body["id"], accountable=body["accountable"]
         ),

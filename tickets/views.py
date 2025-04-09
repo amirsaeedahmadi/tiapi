@@ -13,6 +13,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# from jira.services import jira_service
 from users.permissions import IsAdminHost
 from users.serializers import SearchAdminUserSerializer
 from utils.tokens import generate_integer_code
@@ -26,6 +27,7 @@ from .serializers import AttachmentSerializer
 from .serializers import FollowUpSerializer
 from .serializers import TicketSerializer
 from .services import ticket_service
+from .services import jira_service
 
 User = get_user_model()
 
@@ -56,6 +58,28 @@ class TicketViewSet(
             return qs.filter(user=self.request.user)
         return qs
 
+    def list(self, request, *args, **kwargs):
+        cat = request.query_params.get("cat")
+        if not cat:
+            raise ValidationError({"detail": _("Cat is required")})
+        if cat == Ticket.TECHNICAL:
+            # TODO: check this 
+            queryset = jira_service.list_tickets(user_id=request.user.pk)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        else:
+            super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        cat = request.query_params.get("cat")
+        if not cat:
+            raise ValidationError({"detail": _("Cat is required")})
+        if cat == Ticket.TECHNICAL:
+            pass
+            # TODO: fetch single ticket from jira
+        else:
+            super().retrieve(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         serialized_attachments = []
         attachment_ids = []
@@ -79,6 +103,7 @@ class TicketViewSet(
         data["attachments"] = serialized_attachments
         headers = self.get_success_headers(serializer.data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
 
     @action(methods=["GET"], detail=True, serializer_class=SearchAdminUserSerializer)
     def assignables(self, request, pk=None):
@@ -115,15 +140,22 @@ class TicketViewSet(
 
     @action(methods=["GET"], detail=True, serializer_class=FollowUpSerializer)
     def followups(self, request, pk=None):
-        instance = self.get_object()
-        queryset = instance.followups.all()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        cat = request.query_params.get("cat")
+        if not cat:
+            raise ValidationError({"detail": _("Cat is required")})
+        if cat == Ticket.TECHNICAL:
+            pass
+            # TODO: fetch comments from jira
+        else:
+            instance = self.get_object()
+            queryset = instance.followups.all()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
 
     @followups.mapping.post
     def followup(self, request, pk=None):
