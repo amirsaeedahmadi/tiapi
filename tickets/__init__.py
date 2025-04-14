@@ -1,5 +1,5 @@
 import logging
-from utils.jira import JiraService
+# from utils.jira import JiraService
 
 from utils.kafka import KafkaEventStore
 from django.conf import settings

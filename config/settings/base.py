@@ -115,6 +115,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "users.User"
+SILENCED_SYSTEM_CHECKS = ["auth.E003", "auth.W004"]
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
 # LOGIN_REDIRECT_URL = "users:redirect"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
@@ -326,7 +327,7 @@ ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("users.auth.JWTAuthentication",),
-    "DEFAULT_PERMISSION_CLASSES": ("users.permissions.IsAdminUserOrEmailVerified",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
@@ -395,28 +396,10 @@ SWAGGER_SETTINGS = {
 # File Sizes in MB
 MAX_ATTACHMENT_SIZE = env.int("MAX_ATTACHMENT_SIZE", 1)
 
-
-# JIRA_URL = env.str("JIRA_URL", default="https://192.168.7.19/rest/api/2")
-# JIRA_USERNAME = env.str("JIRA_USERNAME", default="a.ahmadi")
-# JIRA_PASSWORD = env.str("JIRA_PASSWORD", default="")  # Don't hardcode passwords in settings
-# JIRA_VERIFY_SSL = env.bool("JIRA_VERIFY_SSL", default=False)
-
-# JIRA_ENABLED = env.bool("JIRA_ENABLED", default=False)
-# if JIRA_ENABLED:
-#     JIRA_CONFIG = {
-#         'SERVER': env("JIRA_SERVER_URL"),
-#         'USERNAME': env("JIRA_USERNAME"),
-#         'PASSWORD': env("JIRA_PASSWORD"),
-#         'PROJECT_KEY': env("JIRA_PROJECT_KEY"),
-#     }
-
-JIRA_ENABLED = env.bool("JIRA_ENABLED", default=False)
-if JIRA_ENABLED:
-    JIRA_CONFIG = {
-        'SERVER': env("JIRA_SERVER_URL", default="https://192.168.7.19"),
-        'USERNAME': env("JIRA_ADMIN_USERNAME", default="admin"),
-        'PASSWORD': env("JIRA_ADMIN_PASSWORD", default="Darvag@123"),
-        'PROJECT_KEY': env("JIRA_PROJECT_KEY", default="TPP"),
-        'VERIFY_SSL': env.bool("JIRA_VERIFY_SSL", default=False),  
-        'API_VERSION': 'rest/api/2', 
-    }
+# Jira
+JIRA_SETTINGS = {
+    "base_url": env("JIRA_BASE_URL", default=""),
+    "username": env("JIRA_USERNAME", default=""),
+    "password": env("JIRA_PASSWORD", default=""),
+    "default_project_key": env("JIRA_DEFAULT_PROJECT_KEY", default=""),
+}

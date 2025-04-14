@@ -27,7 +27,7 @@ class TicketManager(models.Manager):
         attachments = kwargs.pop("attachments")
         user = kwargs.pop("user")
         with transaction.atomic():
-            instance = self.create(user_id=user, **kwargs)
+            instance = self.create(user_id=user["id"], **kwargs)
             instance.attachments.set(attachments)
             return instance
 

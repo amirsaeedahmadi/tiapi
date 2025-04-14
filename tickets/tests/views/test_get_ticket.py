@@ -9,15 +9,13 @@ from users.factories import UserFactory
 class GetTicketTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory(email_verified=True, mobile_verified=True)
-        cls.other_user = UserFactory(email_verified=True, mobile_verified=True)
+        cls.user = UserFactory()
+        cls.other_user = UserFactory()
         cls.staff = UserFactory(
-            email_verified=True,
             is_staff=True,
             roles=["tickets.accountable"],
         )
         cls.other_staff = UserFactory(
-            email_verified=True,
             is_staff=True,
             roles=["tickets.accountable"],
         )
@@ -62,10 +60,3 @@ class GetTicketTests(APITestCase):
         self.client.force_authenticate(self.other_staff)
         response = self.client.get(self.url, headers={"host": "api.admin.testserver"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_email_unverified(self):
-        self.user.email_verified = False
-        self.user.save()
-        self.client.force_authenticate(self.user)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

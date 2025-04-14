@@ -16,8 +16,6 @@ class ListTicketsTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.staff = UserFactory(
-            email_verified=True,
-            mobile_verified=True,
             is_staff=True,
             roles=["tickets.accountable"],
         )
@@ -94,10 +92,3 @@ class ListTicketsTests(APITestCase):
         self.assertIn("results", data)
         results = data["results"]
         self.assertEqual(len(results), 3)
-
-    def test_email_unverified(self):
-        self.staff.email_verified = False
-        self.staff.save()
-        self.client.force_authenticate(self.staff)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

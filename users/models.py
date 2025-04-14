@@ -61,20 +61,11 @@ class UserManager(DjangoUserManager):
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True)
-    email = models.EmailField(unique=True, verbose_name=_("Email"))
-    email_verified = models.BooleanField(
-        verbose_name=_("Email Verified"), default=False
-    )
+    email = models.EmailField(verbose_name=_("Email"))
     mobile = models.CharField(
         max_length=16,
         blank=True,
         verbose_name=_("Mobile"),
-    )
-    mobile_verified = models.BooleanField(
-        default=False, verbose_name=_("Mobile " "Verified")
-    )
-    identity_verified = models.BooleanField(
-        verbose_name=_("Identity Verified"), default=False
     )
     username = None
     password = None

@@ -27,6 +27,9 @@ ALLOWED_MIMETYPES = [
 
 
 class ReadOnlyTicketSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    accountable = UserSerializer(read_only=True)
+
     class Meta:
         model = Ticket
         fields = "__all__"
@@ -62,39 +65,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
             msg = _("Documents must be either a picture or PDF.")
             raise serializers.ValidationError(msg)
         return value
-
-
-class TicketSerializer(serializers.ModelSerializer):
-    attachments = AttachmentSerializer(many=True, read_only=True)
-    cat_display = serializers.SerializerMethodField()
-    priority_display = serializers.SerializerMethodField()
-    status_display = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Ticket
-        fields = "__all__"
-        extra_kwargs = {"attachments": {"read_only": True}}
-
-    def get_cat_display(self, obj):
-        return Ticket.CAT_CHOICES[obj.cat]
-
-    def get_priority_display(self, obj):
-        return Ticket.PRIO_CHOICES[obj.priority]
-
-    def get_status_display(self, obj):
-        return Ticket.STATUS_CHOICES[obj.status]
-
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        ret["user"] = UserSerializer(instance.user).data
-        if instance.accountable:
-            ret["accountable"] = UserSerializer(instance.accountable).data
-        return ret
-
-    def create(self, validated_data):
-        from .services import ticket_service
-
-        return ticket_service.create(**validated_data)
 
 
 class AccountableSerializer(serializers.ModelSerializer):
@@ -134,8 +104,8 @@ class FollowUpSerializer(serializers.ModelSerializer):
         from .services import ticket_service
 
         return ticket_service.add_followup(**validated_data)
-    
-    
+
+
 class JiraIssueProjectSerializer(serializers.Serializer):
     id = serializers.CharField(required=False)
     key = serializers.CharField(required=False)
@@ -296,3 +266,11 @@ BASE_JIRA_ISSUE_STATUSES = [
     JiraIssueStatusSerializer(instance={"id": "10103", "name": "حل شده"}),
 ]
 
+
+class TicketSerializer(serializers.Serializer):
+    cat = serializers.ChoiceField(Ticket.CAT_CHOICES)
+    subject = serializers.CharField()
+    description = serializers.CharField()
+
+class CommentSerializer(serializers.Serializer):
+    body = serializers.CharField()

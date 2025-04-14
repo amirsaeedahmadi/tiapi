@@ -10,8 +10,8 @@ from users.factories import UserFactory
 class DownloadAttachmentTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory(email_verified=True, mobile_verified=True)
-        cls.other_user = UserFactory(email_verified=True, mobile_verified=True)
+        cls.user = UserFactory()
+        cls.other_user = UserFactory()
         cls.staff = UserFactory(
             is_staff=True,
             roles=["tickets.accountable"],

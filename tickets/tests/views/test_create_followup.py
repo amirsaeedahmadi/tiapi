@@ -12,8 +12,8 @@ from utils.files import uploaded_image_file
 class CreateFollowUpTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory(email_verified=True, mobile_verified=True)
-        cls.other_user = UserFactory(email_verified=True, mobile_verified=True)
+        cls.user = UserFactory()
+        cls.other_user = UserFactory()
         cls.staff = UserFactory(is_staff=True, roles=["tickets.accountable"])
         cls.other_staff = UserFactory(is_staff=True, roles=["tickets.accountable"])
         cls.superuser = UserFactory(is_superuser=True)
@@ -23,13 +23,6 @@ class CreateFollowUpTests(APITestCase):
     def test_unauthenticated(self):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_email_unverified(self):
-        self.user.email_verified = False
-        self.user.save()
-        self.client.force_authenticate(self.user)
-        response = self.client.post(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_other_user(self):
         self.client.force_authenticate(self.other_user)

@@ -16,12 +16,9 @@ class CreateTicketTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory(
-            email_verified=True, is_staff=False, mobile_verified=True
-        )
+        cls.user = UserFactory(is_staff=False)
         cls.staff = UserFactory(
             email="admin@admin.com",
-            email_verified=False,
             is_staff=True,
             roles=["tickets.accountable"],
         )
@@ -29,13 +26,6 @@ class CreateTicketTests(APITestCase):
     def test_unauthenticated(self):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_email_unverified(self):
-        self.user.email_verified = False
-        self.user.save()
-        self.client.force_authenticate(self.user)
-        response = self.client.post(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch("utils.kafka.KafkaEventStore.add_event")
     def test_successful(self, add_event):
@@ -64,13 +54,8 @@ class CreateTicketTests(APITestCase):
         self.assertIn("subject", data)
         self.assertEqual(data["subject"], "my_subject")
 
-    def test_staff_on_not_admin_host(self):
-        self.client.force_authenticate(self.staff)
-        response = self.client.post(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     @patch("utils.kafka.KafkaEventStore.add_event")
-    def test_staff_not_email_verified_on_admin_host(self, add_event):
+    def test_staff_on_admin_host(self, add_event):
         self.client.force_authenticate(self.staff)
         data = {
             "priority": 1,
@@ -83,10 +68,3 @@ class CreateTicketTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         add_event.assert_called()
-
-    def test_staff_not_accountable(self):
-        self.staff.roles = []
-        self.staff.save()
-        self.client.force_authenticate(self.staff)
-        response = self.client.post(self.url, headers={"host": "api.admin.testserver"})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

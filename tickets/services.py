@@ -15,7 +15,7 @@ from tickets.serializers import ReadOnlyFollowUpSerializer
 from tickets.serializers import ReadOnlyTicketSerializer
 from utils.decorators import delay_return
 from utils.kafka import kafka_event_store
-from utils.jira import JiraService
+# from utils.jira import JiraService
 from django.conf import settings
 
 User = get_user_model()
@@ -24,7 +24,7 @@ User = get_user_model()
 class TicketService:
     def __init__(self, event_store):
         self.event_store = event_store
-        self.jira_service = JiraService(event_store=event_store) if settings.JIRA_ENABLED else None
+        # self.jira_service = JiraService(event_store=event_store) if settings.JIRA_ENABLED else None
 
     @staticmethod
     def serialize(instance):

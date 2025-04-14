@@ -1,23 +1,20 @@
 from django.urls import path
-from rest_framework.routers import SimpleRouter
 
-from .views import DownloadAttachmentView, TicketViewSet
+from .views import TicketViewSet
+
 # from  import JiraTicketUpdateHook  # 👈 Import from jira app
 
-router = SimpleRouter()
-router.register(r"", TicketViewSet)
+ticket_list = TicketViewSet.as_view({"get": "list", "post": "create"})
+ticket_detail = TicketViewSet.as_view({"get": "retrieve"})
+comment_list = TicketViewSet.as_view({"get": "fetch_comments", "post": "create_comments"})
 
 urlpatterns = [
-    path(
-        "attachments/<pk>/download/",
-        DownloadAttachmentView.as_view(),
-        name="attachment-download",
-    ),
+    path("", ticket_list, name="ticket-list"),
+    path("<int:ticket_id>/", ticket_detail, name="ticket-detail"),
+    path("<int:ticket_id>/comments/", comment_list, name="comment-list"),
     # path(
     #     "tickets/comment_creation_webhook",
     #     JiraTicketUpdateHook.as_view({"post": "comment_created"}),
     #     name="comment_creation_webhook",
     # ),
 ]
-
-urlpatterns += router.urls
