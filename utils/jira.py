@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.http import HttpResponse
 from requests.auth import HTTPBasicAuth
 
 from tickets.events import JiraTicketCommentCreated
@@ -26,48 +27,44 @@ class IssueTypes:
     ITSM_TASK = "تسک جدید"
     NEW_SERVICE = "سرویس جدید"
 
+class Categories:
+    TECHNICAL = "فنی"
+    SALES = "فروش"
 
 class JiraService:
     customer_id_field = "customfield_10200"
+    category_field = "customfield_10203"
+    panel_customer_name_field = "customfield_10300"
+    panel_customer_email_field = "customfield_10302"
+
+    
 
     ISSUE_TYPE_MAPPING = {
         Ticket.TECHNICAL: IssueTypes.INCIDENT,
         Ticket.SALE: IssueTypes.NEW_SERVICE,
     }
 
+    CATEGORY_MAPPING = {
+        Ticket.TECHNICAL: Categories.TECHNICAL,
+        Ticket.SALE: Categories.SALES,
+    }
+
+
     def __init__(
         self, base_url=None, username=None, password=None, default_project_key=None
     ):
         self.auth = HTTPBasicAuth(username=username, password=password)
+        self.bare_base_url = base_url
         self.base_url = urljoin(base_url, "/rest/api/2/")
         self.default_project_key = default_project_key
-        # self.base_project = (
-        #     JiraIssueProjectSerializer(instance={"key": default_project_key})
-        #     if default_project_key
-        #     else None
-        # )
-        # self.priority_choices = {
-        #     1: JiraIssuePrioritySerializer(instance={"name": "Highest"}),
-        #     2: JiraIssuePrioritySerializer(instance={"name": "High"}),
-        #     3: JiraIssuePrioritySerializer(instance={"name": "Medium"}),
-        #     4: JiraIssuePrioritySerializer(instance={"name": "Low"}),
-        #     5: JiraIssuePrioritySerializer(instance={"name": "Lowest"}),
-        # }
-        # self.base_issue_type = JiraIssueTypeSerializer(instance={"name": "Task"})
-        # self.issue_type_name_choices = [
-        #     "Task",
-        #     "Epic",
-        #     "Story",
-        #     "Bug",
-        #     "ثبت رخداد",
-        #     "اعمال تغییر",
-        #     "تسک جدید",
-        #     "سرویس جدید",
-        # ]
+
 
     def request(self, method, path, headers=None, **kwargs):
         headers = headers or {}
-        headers["Content-Type"] = "application/json"
+
+        if "files" not in kwargs:
+            headers.setdefault("Content-Type", "application/json")
+
         url = urljoin(self.base_url, path)
         return requests.request(
             method,
@@ -79,13 +76,17 @@ class JiraService:
             **kwargs,
         )
 
+
     def create_issue(
         self,
         customer_id,
         summary,
         description,
         issue_type,
-        project_key=None,
+        project_key,
+        user_full_name, 
+        user_email,
+        category_field,
     ):
         data = {
             "fields": {
@@ -93,71 +94,80 @@ class JiraService:
                 "summary": summary,
                 "description": description,
                 "issuetype": {"name": issue_type},
+                self.panel_customer_name_field: user_full_name,
+                self.panel_customer_email_field: user_email,
                 self.customer_id_field: customer_id,
+                self.category_field: category_field,
             }
         }
         response = self.request("POST", "issue", json=data)
         response.raise_for_status()
         return response.json()
+    
+    def add_attachment(self, ticket_id, django_uploaded_file):
+        path = f"/rest/api/2/issue/{ticket_id}/attachments"
+        headers = {
+            "X-Atlassian-Token": "no-check"
+        }
 
-    def add_attachment(self, issue_id, file: BytesIO, file_name: str):
+        files = {
+            "file": (django_uploaded_file.name, django_uploaded_file)
+        }
+        
         response = self.request(
-            "POST",
-            f"issue/{issue_id}/attachments",
-            headers={"X-Atlassian-Token": "nocheck"},
-            files={"file": (file_name, file)},
+            method="POST",
+            path=path,
+            headers=headers,
+            files=files,
         )
         response.raise_for_status()
         return response.json()
-
-    def fetch_tickets(
-        self, customer_id=None, page=None, page_size=None, ticket_id=None
-    ):
+    
+    def fetch_tickets(self, customer_id=None, page=None, page_size=None, ticket_id=None, ordering="created DESC", project=None):
         page = page or 1
         page_size = page_size or 10
         payload = {
             "startAt": (page - 1) * page_size,
             "maxResults": page_size,
-            "fields": [
-                "id",
-                "key",
-                "self",
-                "description",
-                "customfield_10200",
-                "customfield_10201",
-            ],
         }
+
+        jql_parts = []
         if customer_id:
-            payload.update(
-                {
-                    "jql": f"customer_id ~ {customer_id}",
-                }
-            )
+            jql_parts.append(f"customer_id ~ {customer_id}")
         if ticket_id:
-            payload.update(
-                {
-                    "jql": f"id = {ticket_id}",
-                }
-            )
+            jql_parts.append(f"id = {ticket_id}")
+        
+        jql_parts.append(f'project = "{"TPP"}"')
+
+        jql_query = " AND ".join(jql_parts) if jql_parts else ""
+        if ordering:
+            jql_query += f" ORDER BY {ordering}"
+
+        if jql_query:
+            payload["jql"] = jql_query
+
         response = self.request("POST", "search", json=payload)
         response.raise_for_status()
-        data = response.json()
-        return data
+        return response.json()
 
 
     def fetch_ticket_detail(
         self,
-        issue_id_or_key,
+        ticket_id,
         fields=(),
     ):
-        jira_detail_search_url = f"{settings.JIRA_CONFIG["JIRA_BASE_URL"]}/rest/api/2/issue/{issue_id_or_key}"
+        path = f"/rest/api/2/issue/{ticket_id}"
         if fields:
-            jira_detail_search_url += f"?fields={','.join(fields)}"
-        response = requests.get(
-            jira_detail_search_url, auth=self.auth, timeout=15, verify=False
+            path += f"?fields={','.join(fields)}"
+
+        response = self.request(
+            method="GET",
+            path=path,
         )
         response.raise_for_status()
         return response.json()
+
+
 
     def fetch_user_tickets(self, user_id):
         return self.fetch_tickets(jql_filters=f'jql=customer_id ~ "{user_id}"')
@@ -246,6 +256,33 @@ class JiraService:
         event = JiraTicketCommentCreated(followup_data)
         # self.event_store.add_event(event)
         return followup_data
+    
+    def download_attachment(
+        self,
+        attachment_id,
+        filename
+    ):
+        path = f"/secure/attachment/{attachment_id}/{filename}"
+        url = urljoin(self.bare_base_url, path)
+        response = requests.request(
+            "GET",
+            url,
+            timeout=5,
+            verify=False,
+            auth=self.auth,
+        )
+
+        django_response = HttpResponse(
+            content=response.content,
+            status=response.status_code,
+            headers = {
+                'Content-Disposition': response.headers["Content-Disposition"]
+            }
+        )
+
+
+        
+        return django_response
 
 
 jira_service = JiraService(**settings.JIRA_SETTINGS)

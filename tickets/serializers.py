@@ -35,24 +35,9 @@ class ReadOnlyTicketSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class AttachmentSerializer(serializers.ModelSerializer):
-    filename = serializers.SerializerMethodField()
-    download_url = serializers.SerializerMethodField()
+class AttachmentSerializer(serializers.Serializer):
+    file = serializers.FileField(max_length=100, write_only=True)
 
-    class Meta:
-        model = Attachment
-        exclude = ("user", "created_at", "updated_at")
-        extra_kwargs = {"file": {"write_only": True}}
-
-    def get_filename(self, obj):
-        return obj.file.name.split("/")[-1]
-
-    def get_download_url(self, obj):
-        return reverse(
-            "attachment-download",
-            request=self.context.get("request"),
-            kwargs={"pk": obj.pk},
-        )
 
     def validate_file(self, value):
         if value.size > settings.MAX_ATTACHMENT_SIZE * 1024 * 1024:
@@ -268,9 +253,11 @@ BASE_JIRA_ISSUE_STATUSES = [
 
 
 class TicketSerializer(serializers.Serializer):
+    attachments = AttachmentSerializer(many=True, read_only=True)
     cat = serializers.ChoiceField(Ticket.CAT_CHOICES)
     subject = serializers.CharField()
     description = serializers.CharField()
+
 
 class CommentSerializer(serializers.Serializer):
     body = serializers.CharField()
